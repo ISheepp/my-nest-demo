@@ -1,12 +1,5 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Coffee } from './entities/coffee.entity';
-import { log } from 'console';
 
 @Injectable()
 export class CoffeesService {
@@ -40,6 +33,7 @@ export class CoffeesService {
 
   create(createCoffeeDto: any) {
     this.coffees.push(createCoffeeDto);
+    return createCoffeeDto;
   }
 
   update(id: string, updateCoffeeDto: any) {

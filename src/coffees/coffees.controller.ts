@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   HttpCode,
-  HttpException,
   HttpStatus,
   Param,
   Patch,
@@ -12,12 +11,9 @@ import {
   Query,
 } from '@nestjs/common';
 import { CoffeesService } from './coffees.service';
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CreateCoffeeDto } from './dto/create-coffee.dto';
+import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 
 @ApiTags('咖啡控制器')
 @Controller('coffees')
@@ -51,9 +47,10 @@ export class CoffeesController {
   @ApiOperation({
     description: '根据id查找',
   })
-  findOneElse(@Param('id') id: string) {
+  findOneElse(@Param('id') id: number) {
+    console.log(typeof id);
     // return `This action returns #${id} coffee`;
-    return this.coffeeService.findOne(id);
+    return this.coffeeService.findOne('' + id);
   }
 
   // post 请求返回的状态码默认为201
@@ -61,15 +58,18 @@ export class CoffeesController {
   // 动态状态码可以使用底层的实现，比如默认的express.js @Res() 注解
   @Post()
   @HttpCode(HttpStatus.OK)
-  createCoffee(@Body() body) {
+  createCoffee(@Body() createCoffeeDto: CreateCoffeeDto) {
     // console.log(body.price);
     // return body;
-    this.coffeeService.create(body);
+    // 为false，说明传入的并不是CreateCoffeeDto的实例，只是shape相同
+    // ValidationPipe可以将我们的对象转为实例
+    console.log(createCoffeeDto instanceof CreateCoffeeDto);
+    return this.coffeeService.create(createCoffeeDto);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body) {
-    return this.coffeeService.update(id, body);
+  update(@Param('id') id: string, @Body() updateCoffeeDto: UpdateCoffeeDto) {
+    return this.coffeeService.update(id, updateCoffeeDto);
   }
 
   @Delete(':id')
