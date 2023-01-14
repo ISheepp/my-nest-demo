@@ -19,6 +19,7 @@ import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 @Controller('coffees')
 export class CoffeesController {
   constructor(private readonly coffeeService: CoffeesService) {}
+
   /**
    * 返回所有的咖啡 get 请求返回的状态码为默认200
    * query 参数 使用 @Query 注解 example:
@@ -73,7 +74,7 @@ export class CoffeesController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    this.coffeeService.remove(id);
+  async remove(@Param('id') id: string) {
+    await this.coffeeService.remove(id);
   }
 }
