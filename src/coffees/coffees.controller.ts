@@ -14,6 +14,7 @@ import { CoffeesService } from './coffees.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
+import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 
 @ApiTags('咖啡控制器')
 @Controller('coffees')
@@ -27,10 +28,10 @@ export class CoffeesController {
    * @returns 返回所有的咖啡
    */
   @Get()
-  findAll(@Query() paginationQuery) {
+  findAll(@Query() paginationQuery: PaginationQueryDto) {
     // const { limit, offset } = paginationQuery;
     // return `This action returns all coffees!!! Limit: ${limit}, Offset: ${offset}`;
-    return this.coffeeService.findAll();
+    return this.coffeeService.findAll(paginationQuery);
   }
 
   /**

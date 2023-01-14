@@ -16,6 +16,10 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      transformOptions: {
+        // 自动将uri中传递过来的入参转成定义的type
+        enableImplicitConversion: true,
+      },
     }),
   );
 

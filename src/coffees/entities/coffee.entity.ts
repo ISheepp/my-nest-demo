@@ -1,4 +1,11 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Flavor } from './flavor.entity';
 
 /**
  * 定义咖啡类
@@ -21,6 +28,11 @@ export class Coffee {
    * 定义此字段为json类型
    * 可以为空
    */
-  @Column('json', { nullable: true })
-  flavors: string[];
+  // @Column('json', { nullable: true })
+  // cascade 级联插入 可以指定 insert 或 update
+  @JoinTable()
+  @ManyToMany(() => Flavor, (flavor) => flavor.coffees, {
+    cascade: true,
+  })
+  flavors: Flavor[];
 }
