@@ -1,52 +1,118 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Coffee } from './entities/coffee.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { CreateCoffeeDto } from './dto/create-coffee.dto';
+import { UpdateCoffeeDto } from './dto/update-coffee.dto';
+import { Flavor } from './entities/flavor.entity';
+import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 
 @Injectable()
 export class CoffeesService {
+  constructor(
+    @InjectRepository(Coffee)
+    private readonly coffeeRepository: Repository<Coffee>,
+    @InjectRepository(Flavor)
+    private readonly flavorRepository: Repository<Flavor>,
+  ) {}
   private readonly logger = new Logger(CoffeesService.name);
 
-  // 创建一个内存数据库
-  private coffees: Coffee[] = [
-    {
-      id: 1,
-      name: 'StarBuck Roast',
-      brand: 'Buddy Brew',
-      flavors: ['chocolate', 'vanilla'],
-    },
-  ];
-
-  findAll(): Coffee[] {
-    return this.coffees;
+  /**
+   * 返回所有的咖啡
+   * @returns Coffee
+   */
+  findAll(paginationQuery: PaginationQueryDto): Promise<Coffee[]> {
+    const { limit, offset } = paginationQuery;
+    return this.coffeeRepository.find({
+      order: {
+        id: 'ASC',
+      },
+      relations: ['flavors'],
+      // 分页
+      skip: offset,
+      take: limit,
+    });
   }
 
-  findOne(id: string): Coffee {
-    this.logger.log('带有类名的日志打印');
-    // throw 'a random error'; 抛出 node error 日志
-    // 加上加号就是number类型
-    const coffee = this.coffees.find((item) => item.id === +id);
+  /**
+   * 根据id查找coffee
+   * @param id id
+   * @returns Coffee
+   */
+  async findOne(id: string): Promise<Coffee> {
+    const coffee = await this.coffeeRepository.findOne({
+      where: {
+        id: +id,
+      },
+      relations: ['flavors'],
+    });
     if (!coffee) {
-      // throw new HttpException(`Coffee #${id} not found`, HttpStatus.NOT_FOUND);
-      throw new NotFoundException(`Coffee #${id} not found`);
+      throw new NotFoundException(`Coffee # ${id}, not found`);
     }
     return coffee;
   }
 
-  create(createCoffeeDto: any) {
-    this.coffees.push(createCoffeeDto);
-    return createCoffeeDto;
+  /**
+   * 新增一个咖啡
+   * @param createCoffeeDto CreateCoffeeDto
+   * @returns Coffee
+   */
+  async create(createCoffeeDto: CreateCoffeeDto) {
+    // const newCoffee = this.coffeeRepository.create(createCoffeeDto);
+    // 1. 使用map遍历dto中所有的flavor
+    const flavors = await Promise.all(
+      createCoffeeDto.flavors.map((name) => this.preloadFlavorByName(name)),
+    );
+    const coffee = this.coffeeRepository.create({
+      ...createCoffeeDto,
+      flavors,
+    });
+    return this.coffeeRepository.save(coffee);
   }
 
-  update(id: string, updateCoffeeDto: any) {
-    const existingCoffee = this.findOne(id);
-    if (existingCoffee) {
-      // update the existing coffee
+  /**
+   * 根据id 更新咖啡的信息
+   * @param id id
+   * @param updateCoffeeDto dto
+   * @returns Coffee
+   */
+  async update(id: string, updateCoffeeDto: UpdateCoffeeDto): Promise<Coffee> {
+    const flavors =
+      updateCoffeeDto.flavors &&
+      (await Promise.all(
+        updateCoffeeDto.flavors.map((name) => this.preloadFlavorByName(name)),
+      ));
+    // preload() 方法如果查不到则返回undefined
+    const coffee = await this.coffeeRepository.preload({
+      id: +id,
+      ...updateCoffeeDto,
+      flavors,
+    });
+    if (!coffee) {
+      throw new NotFoundException(`Coffee # ${id}, not found`);
     }
+    return this.coffeeRepository.save(coffee);
   }
 
-  remove(id: string) {
-    const coffeeIndex = this.coffees.findIndex((item) => item.id === +id);
-    if (coffeeIndex >= 0) {
-      this.coffees.splice(coffeeIndex, 1);
+  async remove(id: string): Promise<void> {
+    await this.coffeeRepository.delete(id);
+  }
+
+  /**
+   * 根据名字返回风味实体，没有则生成一个实体（没有save到db）
+   * @param name 风味名称
+   * @returns Flavor
+   */
+  private async preloadFlavorByName(name: string): Promise<Flavor> {
+    const existingFlavor = await this.flavorRepository.findOne({
+      where: {
+        name: name,
+      },
+    });
+    if (existingFlavor) {
+      this.logger.log(`当前风味：${name} 已存在`);
+      return existingFlavor;
     }
+    return this.flavorRepository.create({ name });
   }
 }

@@ -14,11 +14,13 @@ import { CoffeesService } from './coffees.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
+import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 
 @ApiTags('咖啡控制器')
 @Controller('coffees')
 export class CoffeesController {
   constructor(private readonly coffeeService: CoffeesService) {}
+
   /**
    * 返回所有的咖啡 get 请求返回的状态码为默认200
    * query 参数 使用 @Query 注解 example:
@@ -26,10 +28,10 @@ export class CoffeesController {
    * @returns 返回所有的咖啡
    */
   @Get()
-  findAll(@Query() paginationQuery) {
+  findAll(@Query() paginationQuery: PaginationQueryDto) {
     // const { limit, offset } = paginationQuery;
     // return `This action returns all coffees!!! Limit: ${limit}, Offset: ${offset}`;
-    return this.coffeeService.findAll();
+    return this.coffeeService.findAll(paginationQuery);
   }
 
   /**
@@ -73,7 +75,7 @@ export class CoffeesController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    this.coffeeService.remove(id);
+  async remove(@Param('id') id: string) {
+    await this.coffeeService.remove(id);
   }
 }
