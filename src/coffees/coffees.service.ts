@@ -24,7 +24,11 @@ export class CoffeesService {
   findAll(paginationQuery: PaginationQueryDto): Promise<Coffee[]> {
     const { limit, offset } = paginationQuery;
     return this.coffeeRepository.find({
+      order: {
+        id: 'ASC',
+      },
       relations: ['flavors'],
+      // 分页
       skip: offset,
       take: limit,
     });
